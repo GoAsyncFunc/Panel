@@ -91,7 +91,7 @@ docker run -d --name panel --restart unless-stopped \
 | `/etc/cron.d/` | 追加定时任务（**文件名不能带点**，否则 cron 会忽略） |
 | `80` | 面板 vhost |
 | `8999` | 仅容器内可访问的状态端点：`/ping`（FPM ping，返回 `pong`）、`/fpm_status`、`/status`（nginx stub_status） |
-| `unix:/run/php/php8.1-fpm.sock` | FPM socket（与原版同路径，直接复用旧 vhost 配置） |
+| `unix:/run/php/php8.1-fpm.sock` | PHP-FPM socket 路径，vhost 的 fastcgi_pass 指向它；换 PHP 版本构建时随版本变化 |
 | `/var/lib/redis` | Redis 工作目录（`dump.rdb` 落在这里，需要持久化就挂载它） |
 
 ### 常用操作
