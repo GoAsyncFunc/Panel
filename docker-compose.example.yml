@@ -1,0 +1,14 @@
+services:
+  panel:
+    build: .
+    image: ghcr.io/goasyncfunc/panel:latest
+    container_name: panel
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./panel:/usr/local/share/html
+      - ./nginx-conf.d:/etc/nginx/conf.d
+      - ./cron.d:/etc/cron.d
+      # - ./redis-data:/var/lib/redis
+    # HEALTHCHECK is defined in the image (http://localhost:8999/ping)
