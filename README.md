@@ -19,22 +19,15 @@
 | ionCube Loader | 15.5.1（按 PHP 版本 + 架构自动选择） | ioncube.com |
 
 PHP 扩展：fpm, cli, common, opcache, readline, mbstring, curl, gd, imagick, mysql(pdo_mysql/mysqli), pgsql(pdo_pgsql), intl, xml(含 dom/simplexml), bcmath, zip, igbinary, msgpack, redis, memcached，外加 ionCube。
-（原版镜像里 igbinary/msgpack 编译了但没启用，这里是通过 sury 预编译包安装并默认启用。）
+igbinary 与 msgpack 通过 sury 预编译包安装并默认启用。
 
-## 与原版镜像的主要差异
+## 设计要点
 
-| 项 | 原版 | 本版 |
-| --- | --- | --- |
-| 基础镜像 | 第三方导出的 LXC rootfs | 官方 debian:12-slim，digest 固定 |
-| 仓库密钥 | `apt-key` + keyserver 轮询（keyserver 大多已失效，构建直接失败） | `signed-by` keyring，密钥从各仓库站点直接下载 |
-| PHP 扩展 | pecl 现场编译 igbinary/msgpack/redis/memcached | sury 预编译包，构建快、可升版本 |
-| nginx | 1.25.2（旧稳定版） | 1.30.6 stable，构建参数可调 |
-| supervisor | `pip install` + git 事件监听器 | apt 安装；程序日志直接进 docker logs |
-| Composer | 安装脚本（无校验） | 官方 phar + sha256 校验 |
-| 健康检查 | 每 5 分钟一次 | 30s 一次 + 20s start-period |
-| worker_processes | start.sh 里 sed（实际从未生效） | nginx `auto`（自动等于 CPU 数） |
-| 架构 | amd64 | amd64 / arm64（由 `dpkg --print-architecture` 自动选择） |
-| 日志 | 部分进文件 | supervisor/nginx 访问日志/PHP-FPM 日志统一进 `docker logs` |
+- 仓库密钥使用 signed-by keyring 直连各站点，不用 apt-key 与 keyserver；源不可用时构建直接报错，而不是静默缺包
+- PHP 扩展全部来自 sury 预编译包，构建快，且可用 `PHP_VERSION` 构建参数在 8.1–8.4 之间切换
+- nginx（stable）与 Composer 固定版本，Composer phar 校验 sha256；ionCube loader 按 PHP 版本与架构自动选择
+- supervisor 由 apt 安装；nginx 访问日志、PHP-FPM 与 supervisor 日志统一进 `docker logs`
+- 健康检查每 30s 请求 `:8999/ping`；amd64 与 arm64 双架构；镜像内所有外网下载带重试
 
 ## 发布的镜像（GHCR）
 
@@ -162,7 +155,7 @@ server {
 
 ## 注意事项
 
-- **PHP 8.1 已停止上游支持**（sury 仍在构建，但不再有新安全修复）。默认 8.1 是为了配合 v2board / Laravel 8；新项目请用 `--build-arg PHP_VERSION=8.3`（或 8.4）构建。
+- **PHP 8.1 已停止上游支持**，但 sury 会持续回移安全补丁，2026-10 的两个 RCE（CVE-2026-109618 / CVE-2026-109619）已包含在 8.1.34-9 及之后的版本里。默认 8.1 是为兼容 v2board / Laravel 8；新项目建议用 `--build-arg PHP_VERSION=8.3`（或 8.4）构建。
 - `8999` 状态端口只在容器内监听并限制 127.0.0.1，不要在宿主机映射出去。
 - Redis 以默认参数运行（无密码、仅容器网络可达）。需要密码/持久化时自行提供 `redis.conf` 并在构建时或 supervisor 配置里指定 `command`；数据目录 `/var/lib/redis`。
 - Redis 启动时会提示 `Memory overcommit must be enabled`：宿主机 `sysctl vm.overcommit_memory=1` 可消除（仅影响后台落盘/复制场景）。
@@ -171,7 +164,7 @@ server {
 - 时区：镜像设 `TZ=Asia/Shanghai`（`/etc/localtime` 已链接），PHP 的 `date.timezone` 未强制，跟随 `TZ`。
 - 镜像体积约 653 MB（含 git/zip/imagick 等面板运维常用工具）。
 
-## 实测记录（本次构建产物）
+## 实测记录
 
 - `php -v`：PHP 8.1.34 + ionCube Loader 15.5.1 + Zend OPcache
 - `nginx -v`：nginx/1.30.6；`composer --version`：2.11.1

@@ -5,7 +5,7 @@
 #   docker build -t lnrp .
 #   docker build --build-arg PHP_VERSION=8.2 -t lnrp:php82 .
 #
-# Runtime contract (kept compatible with the original image):
+# Runtime contract:
 #   :80      panel vhost (replace /etc/nginx/conf.d to install your own)
 #   :8999    container-local status endpoints: /ping /fpm_status /status
 #   socket   unix:/run/php/php<version>-fpm.sock
