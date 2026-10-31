@@ -41,10 +41,10 @@ PHP 扩展：fpm, cli, common, opcache, readline, mbstring, curl, gd, imagick, m
 每次推送到 `main`、推送 `v*` 标签或手动触发 Workflow 时，GitHub Actions 会构建并把镜像发布到 GHCR，同时包含 amd64 与 arm64：
 
 ```bash
-docker pull ghcr.io/goasyncfunc/panel:latest   # PHP 8.1，与 Dockerfile 默认一致
-docker pull ghcr.io/goasyncfunc/panel:8.2
-docker pull ghcr.io/goasyncfunc/panel:8.3
-docker pull ghcr.io/goasyncfunc/panel:8.4
+docker pull ghcr.io/goasyncfunc/lnrp:latest   # PHP 8.1，与 Dockerfile 默认一致
+docker pull ghcr.io/goasyncfunc/lnrp:8.2
+docker pull ghcr.io/goasyncfunc/lnrp:8.3
+docker pull ghcr.io/goasyncfunc/lnrp:8.4
 ```
 
 | 标签 | 内容 |
@@ -53,7 +53,7 @@ docker pull ghcr.io/goasyncfunc/panel:8.4
 | `8.2` / `8.3` / `8.4` | 对应 PHP 版本的构建 |
 | 推送 `v*` 标签时 | 在 8.1 构建上额外生成语义化版本标签，如 `1.0.0` |
 
-上面运行示例里的镜像名换成 `ghcr.io/goasyncfunc/panel:latest` 即可用于部署。
+上面运行示例里的镜像名换成 `ghcr.io/goasyncfunc/lnrp:latest` 即可用于部署。
 
 ## 构建
 

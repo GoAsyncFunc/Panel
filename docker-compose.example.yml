@@ -1,7 +1,7 @@
 services:
   panel:
     build: .
-    image: ghcr.io/goasyncfunc/panel:latest
+    image: ghcr.io/goasyncfunc/lnrp:latest
     container_name: panel
     restart: unless-stopped
     ports:
