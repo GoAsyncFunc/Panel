@@ -210,7 +210,7 @@ server {
 | Redis `maxmemory` | 1G | 通常占用 0.3–0.6G |
 | 合计 | | 约 9.5–11G，余量 1–2.5G |
 
-磁盘：100G 里建议数据库数据控制在 60G 以内；binlog 已设 3 天自动清理；流量类大表按月归档；docker 日志已限制 50M × 3。
+磁盘：100G 里建议数据库数据控制在 60G 以内；流量类大表按月归档；docker 日志已限制 50M × 3。MariaDB 默认不写 binlog（`server_id=0`），需要主从或时间点恢复时加 `--server-id=1`，binlog 已预置按 3 天保留。
 
 CPU：6 核足够。nginx 用 `auto`（6 个 worker），PHP-FPM 的 48 个进程在 6 核上以 IO 等待为主。若并发上来先看到 CPU 打满，优先加核，并把订阅端点接 CDN 或反代并加限速来削峰。
 
