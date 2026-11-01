@@ -1,0 +1,18 @@
+; 队列 worker 示例：复制为 .conf（例如 queue-worker.conf）后挂载到 /etc/supervisor/conf.d/
+; numprocs 即 worker 数量：1000 用户 1-2 个，10 万用户 4-8 个；每个 worker 约 100MB 内存。
+[program:queue-worker]
+command=php /usr/local/share/html/artisan queue:work --sleep=1 --tries=1 --max-time=3600 --memory=256
+user=www-data
+numprocs=4
+process_name=%(program_name)s_%(process_num)02d
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+; 用 Laravel Horizon 的话替换 command 并去掉 numprocs（Horizon 自己管理进程池）：
+; command=php /usr/local/share/html/artisan horizon

@@ -6,32 +6,53 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-    # 时区：镜像默认就是 Asia/Shanghai，这里显式声明，改时区只改这一处
+    # 高并发需要更大的文件描述符上限（镜像内的 nginx / php-fpm 已按 65536 配置）
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    # 限制日志体积，避免 docker 日志写满磁盘
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: "3"
     environment:
       - TZ=Asia/Shanghai
     volumes:
       - ./panel:/usr/local/share/html
       - ./nginx-conf.d:/etc/nginx/conf.d
       - ./cron.d:/etc/cron.d
-      # - ./redis-data:/var/lib/redis
+      # - ./supervisor-conf.d:/etc/supervisor/conf.d   # 队列 worker 等额外进程，见 supervisor/queue-worker.conf.example
+      # - ./redis-data:/var/lib/redis                  # Redis AOF 持久化
     depends_on:
       db:
         condition: service_healthy
     # HEALTHCHECK is defined in the image (http://localhost:8999/ping)
 
-  # 数据库：MariaDB 比 MySQL 8 更省资源（默认不启用 performance_schema、镜像更小），
-  # 这类面板的负载在两者之间没有可感知的性能差别。
-  # 想用 MySQL：image 换成 mysql:8.4，环境变量前缀 MARIADB_ 换成 MYSQL_。
+  # 数据库：MariaDB 比 MySQL 8 更省资源（默认不启用 performance_schema、镜像更小）。
+  # 这组按 6 核 12G 单机预算：DB 约 6.5G + Redis 最多 1G + FPM 上限约 2G + 系统约 1.5G，留有余量。
+  # 16G 以上的库机与小站档见文件末尾注释。
   db:
     image: mariadb:11.4
     container_name: panel-db
     restart: unless-stopped
     command:
-      - --innodb-buffer-pool-size=128M
-      - --max-connections=100
+      - --innodb-buffer-pool-size=6G          # 12G 单机给 6G；专用库机可给内存的 60-70%
+      - --innodb-log-file-size=1G
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-flush-neighbors=0
+      - --innodb-io-capacity=2000             # NVMe；SATA SSD 用 400-1000
+      - --max-connections=300
+      - --table-open-cache=4000
+      - --thread-cache-size=200
+      - --max-allowed-packet=64M
+      - --skip-name-resolve=ON
+      - --slow-query-log=ON
+      - --long-query-time=1
+      - --binlog-expire-logs-seconds=259200   # binlog 保留 3 天，避免 100G 盘被吃满
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
-      # - --default-time-zone=+08:00   # 想让服务器时区写死成 +08:00、不跟随 TZ 时启用
     environment:
       TZ: Asia/Shanghai
       MARIADB_ROOT_PASSWORD: change-this-root-password
@@ -51,3 +72,14 @@ services:
 
 volumes:
   db-data:
+
+# ── 16G 以上的库机：把 --innodb-buffer-pool-size 改成 8G（32G 内存可到 16-24G）──
+
+# ── 小站档（约 1000 用户，1-2G 内存的机器）：用这组替换上面 db 服务的 command ──
+#    command:
+#      - --innodb-buffer-pool-size=256M
+#      - --innodb-log-file-size=128M
+#      - --innodb-flush-log-at-trx-commit=2
+#      - --max-connections=200
+#      - --character-set-server=utf8mb4
+#      - --collation-server=utf8mb4_unicode_ci

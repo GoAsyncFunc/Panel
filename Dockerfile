@@ -110,6 +110,7 @@ COPY php/panel.ini /etc/php/${PHP_VERSION}/fpm/conf.d/99-panel.ini
 COPY php/panel.ini /etc/php/${PHP_VERSION}/cli/conf.d/99-panel.ini
 COPY php/fpm-www.conf /etc/php/${PHP_VERSION}/fpm/pool.d/www.conf
 COPY supervisord.conf /etc/supervisor/supervisord.conf
+COPY redis/panel.conf /etc/redis/panel.conf
 COPY html/index.html /usr/local/share/html/index.html
 COPY start.sh /start.sh
 
