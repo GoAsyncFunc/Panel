@@ -61,7 +61,7 @@ docker build --build-arg PHP_VERSION=8.2 -t lnrp:php82 .
 
 | ARG | 默认值 | 说明 |
 | --- | --- | --- |
-| `PHP_VERSION` | `8.1` | v2board（Laravel 8）建议 8.1；换版本会自动改包名、socket 路径与 ionCube 加载器 |
+| `PHP_VERSION` | `8.1` | Laravel 8 系面板建议 8.1；换版本会自动改包名、socket 路径与 ionCube 加载器 |
 | `NGINX_VERSION` | `1.30.6-1~bookworm` | 版本列表见 <https://nginx.org/packages/debian/pool/nginx/n/nginx/> |
 | `COMPOSER_VERSION` | `2.11.1` | |
 | `COMPOSER_SHA256` | `6f1b891e...882f8c` | 必须与 `COMPOSER_VERSION` 同步更新，哈希取自 <https://getcomposer.org/download/<版本>/composer.phar.sha256sum> |
