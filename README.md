@@ -79,7 +79,9 @@ docker run -d --name panel --restart unless-stopped \
   lnrp
 ```
 
-或参考 `docker-compose.example.yml`（`docker compose up -d --build`）。
+或直接用 `docker-compose.example.yml`（`docker compose up -d --build`），里面已经带一个 MariaDB 11.4 服务：面板代码的数据库地址填服务名 `db`，例如 `DB_HOST=db`，示例密码记得改掉。
+
+数据库选 MariaDB 而不是 MySQL 8：默认不启用 performance_schema、镜像更小，空闲内存占用明显更低，而这类面板的负载在两者之间没有可感知的性能差别。想换 MySQL 把 `image` 改成 `mysql:8.4`、环境变量前缀从 `MARIADB_` 改成 `MYSQL_` 即可。
 
 ### 目录与端口约定
 

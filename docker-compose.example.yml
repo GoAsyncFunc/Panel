@@ -11,4 +11,38 @@ services:
       - ./nginx-conf.d:/etc/nginx/conf.d
       - ./cron.d:/etc/cron.d
       # - ./redis-data:/var/lib/redis
+    depends_on:
+      db:
+        condition: service_healthy
     # HEALTHCHECK is defined in the image (http://localhost:8999/ping)
+
+  # 数据库：MariaDB 比 MySQL 8 更省资源（默认不启用 performance_schema、镜像更小），
+  # 这类面板的负载在两者之间没有可感知的性能差别。
+  # 想用 MySQL：image 换成 mysql:8.4，环境变量前缀 MARIADB_ 换成 MYSQL_。
+  db:
+    image: mariadb:11.4
+    container_name: panel-db
+    restart: unless-stopped
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --max-connections=100
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: change-this-root-password
+      MARIADB_DATABASE: panel
+      MARIADB_USER: panel
+      MARIADB_PASSWORD: change-this-password
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    # 面板代码的 .env 里数据库地址填服务名 db，例如 DB_HOST=db、DB_USERNAME=panel
+    # 需要从宿主机连库时放开：- "127.0.0.1:3306:3306"
+
+volumes:
+  db-data:
