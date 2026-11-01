@@ -6,6 +6,9 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    # 时区：镜像默认就是 Asia/Shanghai，这里显式声明，改时区只改这一处
+    environment:
+      - TZ=Asia/Shanghai
     volumes:
       - ./panel:/usr/local/share/html
       - ./nginx-conf.d:/etc/nginx/conf.d
@@ -28,7 +31,9 @@ services:
       - --max-connections=100
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
+      # - --default-time-zone=+08:00   # 想让服务器时区写死成 +08:00、不跟随 TZ 时启用
     environment:
+      TZ: Asia/Shanghai
       MARIADB_ROOT_PASSWORD: change-this-root-password
       MARIADB_DATABASE: panel
       MARIADB_USER: panel

@@ -163,7 +163,7 @@ server {
 - Redis 启动时会提示 `Memory overcommit must be enabled`：宿主机 `sysctl vm.overcommit_memory=1` 可消除（仅影响后台落盘/复制场景）。
 - supervisor 的 `unix_http_server` 未设账号密码（socket 权限 0700、仅 root 可连），日志里那行 `CRIT Server 'unix_http_server' running without any HTTP authentication checking` 属预期；好处是 `supervisorctl` 免密使用。
 - cron 自身不写 syslog（容器内没有 syslogd），任务输出请按上面示例重定向；要确认任务在跑，可 `docker exec panel crontab -l` / 查看任务自身日志。
-- 时区：镜像设 `TZ=Asia/Shanghai`（`/etc/localtime` 已链接），PHP 的 `date.timezone` 未强制，跟随 `TZ`。
+- 时区：镜像默认 `TZ=Asia/Shanghai`（`/etc/localtime` 已链接），PHP 的 `date.timezone` 未强制、跟随 `TZ`；compose 示例里 panel 与 db 两个服务都显式设置了 `TZ`，要换时区改这一处即可。
 - 镜像体积约 653 MB（含 git/zip/imagick 等面板运维常用工具）。
 
 ## 实测记录
