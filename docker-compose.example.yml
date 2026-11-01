@@ -50,7 +50,7 @@ services:
       - --skip-name-resolve=ON
       - --slow-query-log=ON
       - --long-query-time=1
-      - --binlog-expire-logs-seconds=259200   # 默认不写 binlog（server_id=0）；要主从/时间点恢复时加 --server-id=1，binlog 按 3 天保留
+      - --binlog-expire-logs-seconds=259200   # MariaDB 默认不写 binlog；需要主从/时间点恢复时加 --log-bin（binlog 按 3 天保留）
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     environment:
