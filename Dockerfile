@@ -1,5 +1,5 @@
 # panel — single-container LNRP image: Debian 12 + nginx + PHP-FPM + Redis,
-# supervised by supervisord, for hosting PHP panels (v2board and friends).
+# supervised by supervisord, for hosting PHP panels.
 #
 # Build:
 #   docker build -t lnrp .

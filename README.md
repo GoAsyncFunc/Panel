@@ -2,7 +2,7 @@
 
 [![docker-publish](https://github.com/GoAsyncFunc/Panel/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/GoAsyncFunc/Panel/actions/workflows/docker-publish.yml)
 
-单容器 LNRP 镜像：**Debian 12 (bookworm) + nginx + PHP-FPM + Redis + cron**，由 supervisord 统一托管，用于部署 PHP 面板（v2board 等）。
+单容器 LNRP 镜像：**Debian 12 (bookworm) + nginx + PHP-FPM + Redis + cron**，由 supervisord 统一托管，用于部署 PHP 面板。
 
 同一容器内跑齐 Web、PHP、Redis、cron，挂载面板代码即可用；配置文件全部随镜像提供，不做运行时原地打补丁。
 
@@ -104,7 +104,7 @@ docker exec panel php -v                            # 含 ionCube / OPcache
 docker logs -f panel                                # supervisor、nginx、PHP-FPM、Redis 日志
 ```
 
-### 定时任务（v2board 示例）
+### 定时任务（示例）
 
 `/srv/panel/cron.d/panel`：
 
@@ -112,7 +112,7 @@ docker logs -f panel                                # supervisor、nginx、PHP-F
 * * * * * www-data php /usr/local/share/html/artisan schedule:run >> /dev/null 2>&1
 ```
 
-### 追加进程（v2board horizon 示例）
+### 追加进程（队列 worker 示例）
 
 `/srv/panel/supervisor.d/horizon.conf`（挂载到 `/etc/supervisor/conf.d/`）：
 
@@ -130,7 +130,7 @@ stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 ```
 
-### vhost 示例（v2board）
+### vhost 示例
 
 ```nginx
 server {
@@ -155,7 +155,7 @@ server {
 
 ## 注意事项
 
-- **PHP 8.1 已停止上游支持**，但 sury 会持续回移安全补丁，2026-10 的两个 RCE（CVE-2026-109618 / CVE-2026-109619）已包含在 8.1.34-9 及之后的版本里。默认 8.1 是为兼容 v2board / Laravel 8；新项目建议用 `--build-arg PHP_VERSION=8.3`（或 8.4）构建。
+- **PHP 8.1 已停止上游支持**，但 sury 会持续回移安全补丁，2026-10 的两个 RCE（CVE-2026-109618 / CVE-2026-109619）已包含在 8.1.34-9 及之后的版本里。默认 8.1 是为兼容仍在使用 Laravel 8 的面板程序；新项目建议用 `--build-arg PHP_VERSION=8.3`（或 8.4）构建。
 - `8999` 状态端口只在容器内监听并限制 127.0.0.1，不要在宿主机映射出去。
 - Redis 以默认参数运行（无密码、仅容器网络可达）。需要密码/持久化时自行提供 `redis.conf` 并在构建时或 supervisor 配置里指定 `command`；数据目录 `/var/lib/redis`。
 - Redis 启动时会提示 `Memory overcommit must be enabled`：宿主机 `sysctl vm.overcommit_memory=1` 可消除（仅影响后台落盘/复制场景）。
