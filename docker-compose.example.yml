@@ -31,14 +31,14 @@ services:
     # HEALTHCHECK is defined in the image (http://localhost:8999/ping)
 
   # 数据库：MariaDB 比 MySQL 8 更省资源（默认不启用 performance_schema、镜像更小）。
-  # 这组按 6 核 12G 单机预算：DB 约 6.5G + Redis 最多 1G + FPM 上限约 2G + 系统约 1.5G，留有余量。
+  # 这组按面板与数据库同机部署预算：缓冲池约占内存一半，其余留给 FPM、Redis 与系统（见 README 内存预算）。
   # 16G 以上的库机与小站档见文件末尾注释。
   db:
     image: mariadb:11.4
     container_name: panel-db
     restart: unless-stopped
     command:
-      - --innodb-buffer-pool-size=6G          # 12G 单机给 6G；专用库机可给内存的 60-70%
+      - --innodb-buffer-pool-size=6G          # 同机部署约为内存的 50%；专用库机可给 60-70%
       - --innodb-log-file-size=1G
       - --innodb-flush-log-at-trx-commit=2
       - --innodb-flush-neighbors=0

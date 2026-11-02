@@ -198,21 +198,28 @@ server {
 | 队列 worker | 1–2 | 4–8 |
 | 硬件参考 | web 2C4G + DB 2C4G | web 8C16G + DB 8C32G（NVMe） |
 
-`docker-compose.example.yml` 的数据库按 6 核 12G 单机预算配置（缓冲池 6G），文件末尾附了“16G 以上”与“小站档”两个注释块；面板服务已带 `ulimits.nofile=65536` 与日志体积限制。
+`docker-compose.example.yml` 的数据库按同机部署预算配置（缓冲池 6G，按机器内存调整），文件末尾附了“16G 以上”与“小站档”两个注释块；面板服务已带 `ulimits.nofile=65536` 与日志体积限制。
 
-### 6 核 12G 单机（100G NVMe）
+### 同机部署的内存预算
 
-| 项目 | 取值 | 内存预算 |
-| --- | --- | --- |
-| 系统与 Docker | — | 1.2–1.5G |
-| MariaDB `innodb_buffer_pool_size` | 6G | 进程约 6.5G |
-| FPM `max_children` | 48 | 最坏约 1.9G（每 worker 25–50MB） |
-| Redis `maxmemory` | 1G | 通常占用 0.3–0.6G |
-| 合计 | | 约 9.5–11G，余量 1–2.5G |
+面板与数据库放在同一台机器时，按比例分配：
 
-磁盘：100G 里建议数据库数据控制在 60G 以内；流量类大表按月归档；docker 日志已限制 50M × 3。MariaDB 11.4 默认不写 binlog，需要主从或时间点恢复时加 `--log-bin`，binlog 保留时间已预置为 3 天。
+| 项目 | 分配方式 |
+| --- | --- |
+| 系统与 Docker | 预留 1–1.5G |
+| MariaDB `innodb_buffer_pool_size` | 内存的 50% 左右（进程总占用约再多 0.5G） |
+| Redis `maxmemory` | 0.5–1G |
+| FPM `max_children` | 剩余内存 ÷ 40MB，上限 64 |
 
-CPU：6 核足够。nginx 用 `auto`（6 个 worker），PHP-FPM 的 48 个进程在 6 核上以 IO 等待为主。若并发上来先看到 CPU 打满，优先加核，并把订阅端点接 CDN 或反代并加限速来削峰。
+| 机器内存 | 缓冲池 | FPM 上限 | Redis |
+| --- | --- | --- | --- |
+| 8G | 3–4G | 32 | 512M |
+| 16G | 8G | 64 | 1G |
+| 32G | 16G | 64，或改 `static` | 1–2G |
+
+磁盘：数据库数据建议不超过磁盘容量的 60%；流量类大表按月归档；docker 日志已限制 50M × 3。MariaDB 11.4 默认不写 binlog，需要主从或时间点恢复时加 `--log-bin`，binlog 保留时间已预置为 3 天。
+
+CPU：nginx 用 `auto`（每核一个 worker），PHP-FPM 进程以 IO 等待为主，少量核心即可支撑。若并发上来先看到 CPU 打满，优先加核，并把订阅端点接 CDN 或反代并加限速来削峰。
 
 ### 队列 worker
 
