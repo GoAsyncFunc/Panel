@@ -225,6 +225,50 @@ CPU：nginx 用 `auto`（每核一个 worker），PHP-FPM 进程以 IO 等待为
 
 流量结算依赖队列，示例在 `supervisor/queue-worker.conf.example`：复制成 `.conf` 挂载到 `/etc/supervisor/conf.d/`（compose 里有对应注释行），`numprocs` 就是 worker 数量。
 
+### Redis：内置还是独立部署
+
+镜像内置的 Redis 方便单条 `docker run` 开箱即用，但它和 nginx、PHP-FPM 在同一个容器里，生命周期绑在一起。正式环境建议改用独立的 Redis 容器，原因主要是运维上的，性能上几乎没有差别：
+
+- **升级不丢数据**：内置 Redis 在重建 panel 容器时会被一起清空（数据目录默认没有挂载），未处理的队列任务、用户会话、缓存都会丢失，重建后数据库还要承受缓存预热的压力。拆开后升级面板只重启 web 层。
+- **资源隔离**：可以给 Redis 单独设内存上限，不和 FPM 互相拖累。
+- **横向扩展的前提**：以后加第二个 web 容器，必须共享同一个 Redis。
+- **独立升级**：Redis 版本单独升，不用重建面板镜像。
+
+代价只是多一个容器；同机 Docker 网络多一跳，延迟在亚毫秒级，这个规模下感觉不到。
+
+在 compose 里加一个服务（参数与镜像内置配置一致）：
+
+```yaml
+  redis:
+    image: redis:8
+    container_name: panel-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --save
+      - ""
+      - --maxmemory
+      - 1gb
+      - --maxmemory-policy
+      - volatile-lru
+      - --tcp-backlog
+      - "4096"
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - redis-data:/data
+```
+
+再在文件末尾的 `volumes:` 下加 `redis-data:`，并把面板 `.env` 里的 `REDIS_HOST` 从 `127.0.0.1` 改成 `redis`。镜像内置的 Redis 仍会启动，但没有连接时只占几 MB，可以不管。
+
+继续使用内置 Redis 的话，至少把 `/var/lib/redis` 挂载出来，否则每次重建容器都会清空。
+
+缓存和队列暂时不必拆成两个实例：`volatile-lru` 只淘汰带过期时间的键，队列键不会被淘汰。等 Redis 内存经常顶到上限，再考虑分开。
+
 ### 验证与运营
 
 - `docker exec panel curl -s localhost:8999/fpm_status`：`listen queue` 长期大于 0 说明 FPM 并发不够
